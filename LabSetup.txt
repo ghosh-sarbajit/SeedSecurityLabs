@@ -1,0 +1,106 @@
+# DNS server 10.0.2.15
+# User 10.0.2.4
+# Attacker 10.0.2.6
+
+User VM configaration
+
+cat /etc/resolv.conf
+ls -l /etc/resolv.conf
+above file is a symbolinc to /etc/resolv.conf -> ../run/resolvconf/resolv.conf
+
+
+vi /etc/resolvconf/resolv.conf.d/head
+nameserver 10.0.2.15
+sudo resolvconf -u
+
+
+
+sudo vi /etc/bin/named.conf
+zone "abcdcnvr.com" {
+	type forward;
+	forwarders {
+			10.0.2.6;
+		};
+	};
+
+
+zone "abcdcnvr.com" {
+	type master;
+	file "/etc/bind/abcdcnvr.db";
+	};
+
+zone "2.168.192.in-adde.arpa" {
+	type master;
+	file "/etc/bind/192.168.2.db";
+	};
+------------------------------------------------------------
+cat /etc/bind/abcdcnvr.db
+---------------------------------------------------------------
+
+$TTL 3D  ;
+	;
+@	IN	SOA	ns.abcdcnvr.com.	admin.abcdcnvr.com. (
+	1
+	8H
+	2H
+	4W
+	1D )
+
+@	IN	NS	ns.abcdcnvr.com.
+@	IN	MX	10	mail.abcdcnvr.com.
+
+www	IN	A	192.168.2.101
+mail	IN	A	192.168.2.102
+ns	IN	A	192.168.2.10
+*.abcdcnvr.com.	IN	A	192.168.2.100	
+
+ 
+---------------------------------------------------------------
+cat /etc/bind/192.168.2.db
+---------------------------------------------------------------
+$TTL 3D  ;
+@	IN	SOA	ns.abcdcnvr.com.	admin.abcdcnvr.com. (
+	1
+	8H
+	2H
+	4W
+	1D )
+
+@	IN	NS	ns.abcdcnvr.com.
+
+101	IN	PTR	www.abcdcnvr.com.
+102	IN	PTR	mail.abcdcnvr.com.
+10	IN	PTR	ns.abcdcnvr.com.
+
+--------------------------------------------------------------
+sudo service bind9 restart
+dig www.abcdcnvr.com
+--------------------------------------------------------------
+zone "example.com" {
+	type master;
+	file "/etc/bind/example.com.db";
+};
+--------------------------------------------------------------
+sudo vi /etc/bind/example.db
+-------------------------------------------------------------
+$TTL 3D
+@	IN	SOA	ns.abcdcnvr.com. admin.example.com. (
+		2008111001
+		8H
+		2H
+		4W
+		1D)
+
+@	IN	NS	ns.abcdcnvr.com.
+@	IN	MX	10 mail.example.com.
+
+www	IN	A	1.1.1.1
+mail	IN	A	1.1.1.2
+*.example.com.	IN	A 1.1.1.100
+----------------------------------------------------------------------------
+
+sudo rndc dumpdb -cache
+cat /var/cache/bind/dump.db
+
+sudo rndc flush
+
